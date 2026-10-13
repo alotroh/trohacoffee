@@ -558,9 +558,10 @@
   box.style.width = docW+'px'; box.style.height = docH+'px';
   document.body.appendChild(box);
 
-  // hide the designer placeholder note ("здесь сделать ... стаканчик ... льет кофе")
+  // hide ONLY the small designer placeholder note ("здесь сделать ... стаканчик ... льёт кофе")
   [].slice.call(document.querySelectorAll('div')).forEach(function(d){
-    if(d.childElementCount<=1 && /стаканчик/i.test(d.textContent) && /кофе/i.test(d.textContent)) d.style.display='none';
+    var t=(d.textContent||'').trim();
+    if(d.childElementCount<=1 && t.length>0 && t.length<140 && /стаканчик/i.test(t) && /(льет|льёт)/i.test(t)) d.style.display='none';
   });
 
   // ===== 1) slide2 logo patch (clone matching paper band) + script logo =====
@@ -580,6 +581,7 @@
     var href = photoImg.getAttribute('href') || (photoImg.href && photoImg.href.baseVal);
     var im = new Image();
     im.onload = function(){
+     try{
       var NW=im.naturalWidth, NH=im.naturalHeight, kx=NW/1126, ky=NH/689;
       var sc=document.createElement('canvas'); sc.width=NW; sc.height=NH; var scx=sc.getContext('2d'); scx.drawImage(im,0,0);
       var W=Math.max(8,Math.round(pw)), H=Math.max(8,Math.round(ph));
@@ -601,6 +603,7 @@
       for(var i=0;i<W*H/22;i++){var v=Math.random()<.5?30:235; g.fillStyle='rgb('+v+','+v+','+v+')'; g.fillRect(Math.random()*W,Math.random()*H,1,1);}
       g.globalAlpha=1;
       cvBg.style.backgroundImage='url('+c.toDataURL('image/png')+')';
+     }catch(e){ cvBg.style.background='linear-gradient(90deg,#ecdbc4,#c6b092 32%,#bca485)'; }
     };
     im.src = href;
     box.appendChild(wrap);
@@ -624,12 +627,12 @@
       var c=document.createElement('canvas'); c.width=NW; c.height=NH; var g=c.getContext('2d'); g.drawImage(im,0,0);
       var data; try{ data=g.getImageData(0,0,NW,NH).data; }catch(e){ data=null; }
       // relabel region covering the baked-in "COFFEE" (fixed fractions, robust)
-      var RX0=Math.round(NW*0.135), RX1=Math.round(NW*0.865), RY0=Math.round(NH*0.238), RY1=Math.round(NH*0.333);
+      var RX0=Math.round(NW*0.125), RX1=Math.round(NW*0.875), RY0=Math.round(NH*0.206), RY1=Math.round(NH*0.345);
       var rw=RX1-RX0, rh=RY1-RY0;
       var pc=document.createElement('canvas'); pc.width=rw; pc.height=rh; var pg=pc.getContext('2d');
       if(data){
         // per-column clone of the cup's own gloss from clean rows just above/below the label
-        var topRowY=Math.round(NH*0.228), botRowY=Math.round(NH*0.345);
+        var topRowY=Math.round(NH*0.193), botRowY=Math.round(NH*0.360);
         for(var ox=0; ox<rw; ox++){
           var sxp=RX0+ox;
           var it=(topRowY*NW+sxp)*4, ib=(botRowY*NW+sxp)*4;
@@ -638,7 +641,7 @@
           gd.addColorStop(1,'rgb('+data[ib]+','+data[ib+1]+','+data[ib+2]+')');
           pg.fillStyle=gd; pg.fillRect(ox,0,1,rh);
         }
-      } else { pg.fillStyle='rgb(58,38,24)'; pg.fillRect(0,0,rw,rh); }
+      } else { pg.drawImage(c, RX0, Math.round(NH*0.355), rw, Math.round(NH*0.09), 0, 0, rw, rh); }
       // feather top & bottom edges so it melts into the cup
       pg.globalCompositeOperation='destination-in';
       var gy=pg.createLinearGradient(0,0,0,rh);
