@@ -520,216 +520,84 @@
     </div>
   <script>
 (function(){function run(){
-/* troha&coffee — scroll coffee-flow FX + logo fixes.  Static content only (no user input). */
+/* troha&coffee — full-width fit + tasteful motion. No content edits. */
 (function(){
-  var old = document.getElementById('troha-fx'); if(old) old.remove();
-  var oldS = document.getElementById('troha-fx-style'); if(oldS) oldS.remove();
+  function q(n){return [].slice.call(document.querySelectorAll('[data-pencil-name]')).find(function(e){return e.getAttribute('data-pencil-name')===n;});}
+  function all(sel){return [].slice.call(document.querySelectorAll(sel));}
+  var DESIGN_W = 1126;
+  var frame = q('Frame'), bakery = q('Bakery Block');
 
-  function pencil(name){return [].slice.call(document.querySelectorAll('[data-pencil-name]')).find(function(e){return e.getAttribute('data-pencil-name')===name;});}
-  var bakery = pencil('Bakery Block');
-  var photoImg = bakery ? bakery.querySelector('image') : null;
-  function absRect(el){var r=el.getBoundingClientRect();return {x:r.left+window.scrollX, y:r.top+window.scrollY, w:r.width, h:r.height};}
-  var photo = photoImg ? absRect(photoImg) : {x:20,y:832,w:1126,h:689};
-  var SX = photo.w/1126, SY = photo.h/689;
-  function P(px,py){return {x: photo.x + px*SX, y: photo.y + py*SY};}
+  // ===================== 1) FULL-WIDTH (kill side stripes) =====================
+  var cream = '#f3ebda';
+  if(frame){ try{ cream = getComputedStyle(q('Hero Card')||frame).backgroundColor || cream; }catch(e){} }
+  [frame, bakery].forEach(function(b){ if(b) b.style.left='0'; });
+  document.documentElement.style.cssText += ';margin:0;background:'+cream+';';
+  document.body.style.cssText += ';margin:0;overflow-x:hidden;background:'+cream+';';
+  function fit(){ document.body.style.zoom = (window.innerWidth / DESIGN_W); }
+  fit();
+  window.addEventListener('resize', fit);
 
-  var docH = document.documentElement.scrollHeight;
-  var docW = Math.max(document.documentElement.scrollWidth, photo.x+photo.w);
-
-  // ===== config (tune) =====
-  var cup = {x: photo.x + 300, y: 548, w: 132, h: 176};   // slide1 cup top-left (abs)
-  var land = P(100, 383);                                  // slide2 cup rim (abs)
-  var patch = {x0:100, y0:8, w:348, h:70, src:448, fL:12, fR:18, fT:10, fB:12}; // slide2 logo patch (photo-local)
-
-  // ---- style ----
-  var css = document.createElement('style'); css.id='troha-fx-style';
+  // ===================== 2) MOTION =====================
+  var css = document.createElement('style');
   css.textContent = [
-    '#troha-fx{position:absolute;left:0;top:0;pointer-events:none;z-index:60;}',
-    '#troha-fx svg{overflow:visible;}',
-    '@keyframes trPourShift{to{stroke-dashoffset:-16}}',
-    '@keyframes trSteam{0%{opacity:0;transform:translateY(0)}30%{opacity:.45}100%{opacity:0;transform:translateY(-32px)}}',
-    '@keyframes trDrip{0%,100%{r:7px}50%{r:9px}}',
-    '@keyframes trRipple{0%{opacity:.55;transform:scale(.3)}100%{opacity:0;transform:scale(1)}}',
-    '.tr-logo2{position:absolute;font-family:Pacifico,system-ui,cursive;color:#9E3B1C;white-space:nowrap;line-height:1;text-shadow:0 1px 1px rgba(120,80,40,.18);}'
+    '@keyframes trFade{from{opacity:0}to{opacity:1}}',
+    '@keyframes trUp{from{opacity:0;translate:0 26px}to{opacity:1;translate:0 0}}',
+    '@keyframes trDown{from{opacity:0;translate:0 -22px}to{opacity:1;translate:0 0}}',
+    '@keyframes trFloatA{0%,100%{translate:0 0}50%{translate:0 -11px}}',
+    '@keyframes trFloatB{0%,100%{translate:0 0}50%{translate:0 9px}}',
+    '@keyframes trFloatC{0%,100%{translate:0 0}50%{translate:6px -7px}}',
+    '.tr-up{opacity:0;animation:trUp .9s cubic-bezier(.22,.9,.3,1) both;}',
+    '.tr-down{opacity:0;animation:trDown .8s cubic-bezier(.22,.9,.3,1) both;}',
+    '.tr-fade{opacity:0;animation:trFade .9s ease both;}',
+    '.tr-bean{opacity:0;}',
+    '.tr-rv{opacity:0;translate:0 34px;transition:opacity .9s cubic-bezier(.22,.9,.3,1),translate .9s cubic-bezier(.22,.9,.3,1);}',
+    '.tr-rv.tr-in{opacity:1;translate:0 0;}',
+    // hover polish (translate/scale compose with any inline rotate)
+    '[data-pencil-name^="Card "]{transition:translate .35s ease, box-shadow .35s ease, filter .35s ease;cursor:pointer;}',
+    '[data-pencil-name^="Card "]:hover{translate:0 -10px;box-shadow:0 22px 40px rgba(20,10,4,.35);filter:brightness(1.04);}',
+    '[data-pencil-name="STORY"],[data-pencil-name="BLENDS"],[data-pencil-name="OFFERS"]{transition:opacity .3s ease, letter-spacing .3s ease;cursor:pointer;}',
+    '[data-pencil-name="STORY"]:hover,[data-pencil-name="BLENDS"]:hover,[data-pencil-name="OFFERS"]:hover{opacity:.62;letter-spacing:2.4px;}',
+    '[data-pencil-name="Cart"]{transition:scale .3s ease;cursor:pointer;}',
+    '[data-pencil-name="Cart"]:hover{scale:1.14;}'
   ].join('');
   document.head.appendChild(css);
 
-  var box = document.createElement('div'); box.id='troha-fx';
-  box.style.width = docW+'px'; box.style.height = docH+'px';
-  document.body.appendChild(box);
+  function animate(el, cls, delay){ if(!el) return; el.style.animationDelay=(delay||0)+'ms'; el.classList.add(cls); }
 
-  // hide ONLY the small designer placeholder note ("здесь сделать ... стаканчик ... льёт кофе")
-  [].slice.call(document.querySelectorAll('div')).forEach(function(d){
-    var t=(d.textContent||'').trim();
-    if(d.childElementCount<=1 && t.length>0 && t.length<140 && /стаканчик/i.test(t) && /(льет|льёт)/i.test(t)) d.style.display='none';
+  // --- hero entrance ---
+  animate(q('Logo'), 'tr-down', 0);
+  ['STORY','BLENDS','OFFERS'].forEach(function(n,i){ animate(q(n),'tr-down', 120+i*90); });
+  animate(q('Cart'),'tr-down', 360);
+  animate(q('BREWED'),'tr-up', 220);
+  animate(q('Headline'),'tr-up', 300);
+  animate(q('DIFFERENT'),'tr-up', 380);
+  animate(q('Badge'),'tr-fade', 640);
+
+  // --- beans: fade in (staggered) + gentle endless float ---
+  var floats=['trFloatA','trFloatB','trFloatC'];
+  all('[data-pencil-name^="Bean"]').forEach(function(b,i){
+    b.classList.add('tr-bean');
+    var dur=(5200 + (i*370)%3600);
+    b.style.animation = 'trFade .8s ease '+(200+i*70)+'ms both, '+floats[i%3]+' '+dur+'ms ease-in-out '+(900+i*120)+'ms infinite';
   });
 
-  // ===== 1) slide2 logo patch (clone matching paper band) + script logo =====
-  (function(){
-    if(!photoImg) return;
-    var pr = P(patch.x0, patch.y0), pw = patch.w*SX, ph = patch.h*SY;
-    var wrap = document.createElement('div');
-    var mL=patch.fL*SX, mR=patch.fR*SX, mT=patch.fT*SY, mB=patch.fB*SY;
-    var maskX='linear-gradient(to right, transparent 0, #000 '+mL+'px, #000 calc(100% - '+mR+'px), transparent 100%)';
-    var maskY='linear-gradient(to bottom, transparent 0, #000 '+mT+'px, #000 calc(100% - '+mB+'px), transparent 100%)';
-    wrap.style.cssText='position:absolute;left:'+pr.x+'px;top:'+pr.y+'px;width:'+pw+'px;height:'+ph+'px;overflow:hidden;'+
-      '-webkit-mask-image:'+maskX+','+maskY+';-webkit-mask-composite:source-in;'+
-      'mask-image:'+maskX+','+maskY+';mask-composite:intersect;';
-    var cvBg = document.createElement('div');
-    cvBg.style.cssText='position:absolute;inset:0;background-size:100% 100%;background-repeat:no-repeat;';
-    wrap.appendChild(cvBg);
-    var href = photoImg.getAttribute('href') || (photoImg.href && photoImg.href.baseVal);
-    var im = new Image();
-    im.onload = function(){
-     try{
-      var NW=im.naturalWidth, NH=im.naturalHeight, kx=NW/1126, ky=NH/689;
-      var sc=document.createElement('canvas'); sc.width=NW; sc.height=NH; var scx=sc.getContext('2d'); scx.drawImage(im,0,0);
-      var W=Math.max(8,Math.round(pw)), H=Math.max(8,Math.round(ph));
-      var c=document.createElement('canvas'); c.width=W; c.height=H; var g=c.getContext('2d');
-      function paper(lx,ly){var d=scx.getImageData(Math.round(lx*kx),Math.round(ly*ky),1,1).data;var R=d[0],G=d[1],B=d[2]; if(R>150&&B>108&&(R-G)<66&&(R-B)<104) return [R,G,B]; return null;}
-      function colAvg(lx,ys){var r=0,gg=0,b=0,n=0; for(var k=0;k<ys.length;k++){var p=paper(lx,ys[k]); if(p){r+=p[0];gg+=p[1];b+=p[2];n++;}} return n?[r/n,gg/n,b/n]:null;}
-      var lastTop=[205,182,152];
-      for(var ox=0; ox<W; ox++){
-        var lx = patch.x0 + ox*patch.w/W;
-        var top=colAvg(lx,[0,3,6]) || lastTop;
-        var bot=colAvg(lx,[86,90,94,98,102]) || top;
-        lastTop=top;
-        var grd=g.createLinearGradient(0,0,0,H);
-        grd.addColorStop(0,'rgb('+Math.round(top[0])+','+Math.round(top[1])+','+Math.round(top[2])+')');
-        grd.addColorStop(1,'rgb('+Math.round(bot[0])+','+Math.round(bot[1])+','+Math.round(bot[2])+')');
-        g.fillStyle=grd; g.fillRect(ox,0,1,H);
-      }
-      g.globalAlpha=0.05;
-      for(var i=0;i<W*H/22;i++){var v=Math.random()<.5?30:235; g.fillStyle='rgb('+v+','+v+','+v+')'; g.fillRect(Math.random()*W,Math.random()*H,1,1);}
-      g.globalAlpha=1;
-      cvBg.style.backgroundImage='url('+c.toDataURL('image/png')+')';
-     }catch(e){ cvBg.style.background='linear-gradient(90deg,#ecdbc4,#c6b092 32%,#bca485)'; }
-    };
-    im.src = href;
-    box.appendChild(wrap);
+  // --- scattered script letters (troha&coffee arcs): soft stagger fade ---
+  var letters=[];
+  for(var i=0;i<12;i++){ var l=q('L'+i); if(l)letters.push(l); var r=q('R'+i); if(r)letters.push(r); }
+  letters.forEach(function(el,i){ animate(el,'tr-fade', 700+i*45); });
 
-    var logo = document.createElement('div'); logo.className='tr-logo2';
-    logo.textContent='troha&coffee';
-    logo.style.left = (pr.x+6)+'px';
-    logo.style.top = (pr.y + (patch.y0? (16*SY):0) - 2)+'px';
-    logo.style.fontSize = Math.round(44*SX)+'px';
-    box.appendChild(logo);
-  })();
-
-  // ===== 2) slide1: reveal the dark "COFFEE" cup, relabel -> troha&coffee =====
-  var cuImg = {left: photo.x + 10, w: 360, top: 286};       // lower-left hero placement (abs)
-  cuImg.h = cuImg.w*1104/736;                               // keep aspect (~540)
-
-  function buildCup(url, cb){
-    var im = new Image();
-    im.onload = function(){
-      var NW=im.naturalWidth, NH=im.naturalHeight;
-      var c=document.createElement('canvas'); c.width=NW; c.height=NH; var g=c.getContext('2d'); g.drawImage(im,0,0);
-      var data; try{ data=g.getImageData(0,0,NW,NH).data; }catch(e){ data=null; }
-      // relabel region covering the baked-in "COFFEE" (fixed fractions, robust)
-      var RX0=Math.round(NW*0.125), RX1=Math.round(NW*0.875), RY0=Math.round(NH*0.206), RY1=Math.round(NH*0.345);
-      var rw=RX1-RX0, rh=RY1-RY0;
-      var pc=document.createElement('canvas'); pc.width=rw; pc.height=rh; var pg=pc.getContext('2d');
-      if(data){
-        // per-column clone of the cup's own gloss from clean rows just above/below the label
-        var topRowY=Math.round(NH*0.193), botRowY=Math.round(NH*0.360);
-        for(var ox=0; ox<rw; ox++){
-          var sxp=RX0+ox;
-          var it=(topRowY*NW+sxp)*4, ib=(botRowY*NW+sxp)*4;
-          var gd=pg.createLinearGradient(0,0,0,rh);
-          gd.addColorStop(0,'rgb('+data[it]+','+data[it+1]+','+data[it+2]+')');
-          gd.addColorStop(1,'rgb('+data[ib]+','+data[ib+1]+','+data[ib+2]+')');
-          pg.fillStyle=gd; pg.fillRect(ox,0,1,rh);
-        }
-      } else { pg.drawImage(c, RX0, Math.round(NH*0.355), rw, Math.round(NH*0.09), 0, 0, rw, rh); }
-      // feather top & bottom edges so it melts into the cup
-      pg.globalCompositeOperation='destination-in';
-      var gy=pg.createLinearGradient(0,0,0,rh);
-      gy.addColorStop(0,'rgba(0,0,0,0)'); gy.addColorStop(0.22,'#000'); gy.addColorStop(0.78,'#000'); gy.addColorStop(1,'rgba(0,0,0,0)');
-      pg.fillStyle=gy; pg.fillRect(0,0,rw,rh);
-      pg.globalCompositeOperation='source-over';
-      g.drawImage(pc, RX0, RY0);
-      // write troha&coffee in the cup's light-tan tone
-      g.textAlign='center'; g.textBaseline='middle';
-      var fs0=rh*0.60; g.font='400 '+fs0+'px Pacifico, cursive';
-      var txt='troha&coffee', maxw=rw*0.90; if(g.measureText(txt).width>maxw) g.font='400 '+(fs0*maxw/g.measureText(txt).width)+'px Pacifico, cursive';
-      g.fillStyle='rgb(230,214,180)'; g.shadowColor='rgba(0,0,0,.45)'; g.shadowBlur=fs0*0.1; g.shadowOffsetY=1;
-      g.fillText(txt, (RX0+RX1)/2, (RY0+RY1)/2);
-      var cupURL = c.toDataURL('image/png');
-
-      var el=document.createElement('div'); el.id='troha-cup';
-      var fadeLocal = (photo.y - cuImg.top);                 // slide1 bottom in cup-local px
-      var fadeCss = '';
-      if(fadeLocal < cuImg.h){
-        var f='linear-gradient(to bottom,#000 0,#000 '+(fadeLocal-42)+'px, transparent '+(fadeLocal+4)+'px)';
-        fadeCss='-webkit-mask-image:'+f+';mask-image:'+f+';';
-      }
-      el.style.cssText='position:absolute;left:'+cuImg.left+'px;top:'+cuImg.top+'px;width:'+cuImg.w+'px;height:'+cuImg.h+'px;'+
-        'background:url('+cupURL+') center/100% 100% no-repeat;filter:drop-shadow(0 20px 34px rgba(40,20,8,.30));'+fadeCss;
-      box.appendChild(el);
-
-      // flow origin = splash just above the slide1 boundary
-      var originY = Math.min(cuImg.top + cuImg.h*0.90, photo.y - 44);
-      cb({x: cuImg.left + cuImg.w*0.46, y: originY});
-    };
-    im.onerror = function(){ cb({x: photo.x+210, y: photo.y-60}); };
-    im.src = url;
-  }
-
-  var cupDiv = [].slice.call(document.querySelectorAll('div')).find(function(d){return getComputedStyle(d).backgroundImage.indexOf('data:image/webp')>=0;});
-  (function(){
-    function go(){
-      if(cupDiv){
-        var bb=getComputedStyle(cupDiv).backgroundImage, u=bb.slice(bb.indexOf('"')+1, bb.lastIndexOf('"'));
-        cupDiv.style.visibility='hidden';
-        buildCup(u, buildFlow);
-      } else { buildFlow({x: photo.x+210, y: photo.y-60}); }
-    }
-    if(document.fonts && document.fonts.ready){ document.fonts.ready.then(go); } else { go(); }
-  })();
-
-  // ===== 3) scroll-linked coffee flow slide1 -> slide2 =====
-  function buildFlow(S){
-    var E = land, gx = photo.x + 58;
-    var d = 'M'+S.x+','+S.y+
-            ' C'+(S.x-18)+','+(S.y+40)+' '+(gx+30)+','+(S.y+26)+' '+(gx+24)+','+(S.y+70)+
-            ' S'+(gx+6)+','+(photo.y+30)+' '+(gx+10)+','+(photo.y+120)+
-            ' S'+(gx-10)+','+(photo.y+250)+' '+gx+','+(photo.y+330)+
-            ' S'+gx+','+(E.y-80)+' '+E.x+','+E.y;
-    var fs = document.createElementNS('http://www.w3.org/2000/svg','svg');
-    fs.setAttribute('width', docW); fs.setAttribute('height', docH);
-    fs.style.cssText='position:absolute;left:0;top:0;';
-    fs.innerHTML = [
-      '<defs>',
-      '<linearGradient id="trFlow" x1="0" x2="0" y1="'+S.y+'" y2="'+E.y+'" gradientUnits="userSpaceOnUse">',
-        '<stop offset="0" stop-color="#5a2f16"/><stop offset=".5" stop-color="#3f2110"/><stop offset="1" stop-color="#2a1507"/>',
-      '</linearGradient>',
-      '<filter id="trSoft"><feGaussianBlur stdDeviation="0.5"/></filter>',
-      '</defs>',
-      '<path id="trFlowPath" d="'+d+'" fill="none" stroke="url(#trFlow)" stroke-width="15" stroke-linecap="round" filter="url(#trSoft)"/>',
-      '<path id="trFlowGloss" d="'+d+'" fill="none" stroke="#9a6030" stroke-width="3.5" stroke-linecap="round" opacity=".5"/>',
-      '<circle id="trDrip" r="8" fill="url(#trFlow)" opacity="0"/>',
-      '<circle id="trRipple" r="14" fill="none" stroke="#3f2110" stroke-width="3" cx="'+E.x+'" cy="'+E.y+'" opacity="0" style="transform-origin:'+E.x+'px '+E.y+'px"/>'
-    ].join('');
-    box.appendChild(fs);
-
-    var fp=fs.querySelector('#trFlowPath'), gl=fs.querySelector('#trFlowGloss'), drip=fs.querySelector('#trDrip'), ripple=fs.querySelector('#trRipple');
-    var L=fp.getTotalLength();
-    fp.style.strokeDasharray=L; gl.style.strokeDasharray=L;
-    var startScroll=S.y - window.innerHeight*0.78, endScroll=E.y - window.innerHeight*0.50, rippled=false;
-    function clamp(v,a,b){return v<a?a:v>b?b:v;}
-    function onScroll(){
-      var p=clamp((window.scrollY-startScroll)/(endScroll-startScroll),0,1), off=L*(1-p);
-      fp.style.strokeDashoffset=off; gl.style.strokeDashoffset=off;
-      if(p>0&&p<0.999){var pt=fp.getPointAtLength(L*p); drip.setAttribute('cx',pt.x); drip.setAttribute('cy',pt.y); drip.setAttribute('opacity','1');}
-      else drip.setAttribute('opacity','0');
-      if(p>=0.999&&!rippled){rippled=true; ripple.style.animation='trRipple .9s ease-out 2';}
-      if(p<0.9) rippled=false;
-    }
-    window.addEventListener('scroll', function(){window.requestAnimationFrame(onScroll);}, {passive:true});
-    window.addEventListener('resize', function(){L=fp.getTotalLength(); fp.style.strokeDasharray=L; gl.style.strokeDasharray=L; onScroll();});
-    onScroll();
-  }
+  // --- scroll reveal for the bakery / menu ---
+  var revealNames=['Bottom Section','Drink Header','Cards Row','Card Капучино','Card Эспрессо','Card Американо','Card Флэт Уайт'];
+  // the big pastry photo (first image inside Bakery Block)
+  var photo = bakery ? bakery.querySelector('svg') : null;
+  var targets=[];
+  revealNames.forEach(function(n){ var e=q(n); if(e) targets.push(e); });
+  if(photo) targets.push(photo);
+  targets.forEach(function(e,i){ e.classList.add('tr-rv'); e.style.transitionDelay=((i%4)*90)+'ms'; });
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('tr-in'); io.unobserve(x.target); } }); }, {threshold:0.12});
+    targets.forEach(function(e){ io.observe(e); });
+  } else { targets.forEach(function(e){ e.classList.add('tr-in'); }); }
 })();
 
 }
